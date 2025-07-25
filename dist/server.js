@@ -12,16 +12,20 @@ const port = 8000;
 // when using middleware `hostname` and `port` must be provided below
 const app = (0, next_1.default)({ dev, hostname, port });
 const handler = app.getRequestHandler();
+const emailToSocketIdMap = new Map();
+const socketidToEmailMap = new Map();
 app.prepare().then(() => {
     const httpServer = (0, node_http_1.createServer)(handler);
     const io = new socket_io_1.Server(httpServer);
     io.on("connection", (socket) => {
         console.log("Socket connected", socket.id);
-        socket.on("add", (payload) => {
-            io.emit("add", payload);
-        });
-        socket.on("minus", (payload) => {
-            io.emit("minus", payload);
+        socket.on("room:join", (data) => {
+            const { email, room } = data;
+            emailToSocketIdMap.set(email, socket.id);
+            socketidToEmailMap.set(socket.id, email);
+            io.to(room).emit("user:joined", { email, id: socket.id });
+            socket.join(room);
+            io.to(socket.id).emit("room:join", data);
         });
     });
     httpServer

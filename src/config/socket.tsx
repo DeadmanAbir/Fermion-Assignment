@@ -16,12 +16,12 @@ type SocketContextType = {
 };
 
 // Create context with undefined as default
-const SocketContext = createContext<SocketContextType | undefined>(undefined);
+const SocketContext = createContext<SocketContextType | null>(null);
 
 // Hook to use the socket context
 export const useSocket = () => {
 	const context = useContext(SocketContext);
-	if (context === undefined) {
+	if (context === null) {
 		throw new Error("useSocket must be used within a SocketProvider");
 	}
 	return context;
@@ -72,8 +72,6 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 	};
 
 	return (
-		<SocketContext.Provider value={value}>
-			{children}
-		</SocketContext.Provider>
+		<SocketContext.Provider value={value}>{children}</SocketContext.Provider>
 	);
 };

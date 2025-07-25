@@ -1,7 +1,17 @@
 "use client";
-import { useState, ChangeEvent, FormEvent, useCallback } from "react";
+import { useSocket } from "@/config/socket";
+import {
+	useState,
+	ChangeEvent,
+	FormEvent,
+	useCallback,
+	useEffect,
+} from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+	const socket = useSocket();
+	const router = useRouter();
 	const [formData, setFormData] = useState({
 		email: "",
 		roomId: "",
@@ -14,14 +24,36 @@ export default function Home() {
 			[id]: value,
 		}));
 	};
+	const handleJoinRoom = useCallback(
+		(data: { email: string; roomId: string }) => {
+			const { email, roomId } = data;
+			console.log("Data from BE: ", data);
+			router.push(`/room/${roomId}`);
+		},
+		[]
+	);
+	useEffect(() => {
+		if (socket.socket && socket.isConnected) {
+			socket.socket.on("room:join", handleJoinRoom);
+			return () => {
+				socket.socket?.off("room:join", handleJoinRoom);
+			};
+		}
+	}, [router]);
 
 	const handleSubmit = useCallback(
 		(e: FormEvent) => {
 			e.preventDefault();
-			console.log(formData);
-			// Add your form submission logic here
+			if (socket.socket && socket.isConnected) {
+				socket.socket.emit("room:join", {
+					email: formData.email,
+					roomId: formData.roomId,
+				});
+			} else {
+				console.warn("Socket is not connected");
+			}
 		},
-		[formData]
+		[socket, handleJoinRoom]
 	);
 
 	return (
